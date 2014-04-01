@@ -7,9 +7,7 @@ extern "C" {
 
 
 #ifdef WIN32
-#define LLD "I64d"
-#else
-#define LLD "lld"
+#define PRId64 "I64d"
 #endif
 
 #define IS_MULTICAST_IP(ip) (0xE0000000 <= (ip & 0xFF000000) && (ip & 0xFF000000) < 0xF0000000)

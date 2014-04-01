@@ -2,7 +2,7 @@ CC := gcc
 RM := rm -rf
 TARGET := tscast
 
-CFLAGS = -pipe -D_LARGEFILE64_SOURCE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -O2 -Wall
+CFLAGS = -pipe -D_LARGEFILE64_SOURCE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -O2 -Wall -Wno-unused-result
 
 SRCS = utils.c rtp.c tccore.c tscast.c
 OBJS = $(patsubst %.c,%.o,$(SRCS))

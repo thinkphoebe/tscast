@@ -63,13 +63,13 @@ void print_log(const char *name, int control, const char *format, ...)
 
 int parser_pcr(uint8_t *pkt, uint64_t *pcr/* out */)
 {
-    uint8_t transport_error_indicator; 
-    uint8_t playload_unit_start_indicator; 
-    uint8_t transport_priority; 
-    uint8_t transport_scrambling_control; 
+    //uint8_t transport_error_indicator; 
+    //uint8_t playload_unit_start_indicator; 
+    //uint8_t transport_priority; 
+    //uint8_t transport_scrambling_control; 
     uint8_t adaptation_field_control; 
     uint8_t adaptation_field_length; 
-    uint8_t continuity_counter; 
+    //uint8_t continuity_counter; 
     uint16_t PID; 
 
     if (*pkt != 0x47)
@@ -78,14 +78,14 @@ int parser_pcr(uint8_t *pkt, uint64_t *pcr/* out */)
         return -1; 
     }
 
-    transport_error_indicator = ((*(pkt + 1)) & 0x80) >> 7; 
-    playload_unit_start_indicator = ((*(pkt + 1)) & 0x40) >> 6; 
-    transport_priority = ((*(pkt + 1)) & 0x20) >> 5; 
+    //transport_error_indicator = ((*(pkt + 1)) & 0x80) >> 7; 
+    //playload_unit_start_indicator = ((*(pkt + 1)) & 0x40) >> 6; 
+    //transport_priority = ((*(pkt + 1)) & 0x20) >> 5; 
     PID = ((*(pkt + 1)) & 0x1F); 
     PID = (PID << 8) + (*(pkt + 2)); 
-    transport_scrambling_control = ((*(pkt + 3)) & 0xC0) >> 6; 
+    //transport_scrambling_control = ((*(pkt + 3)) & 0xC0) >> 6; 
     adaptation_field_control = ((*(pkt + 3)) & 0x30) >> 4; 
-    continuity_counter =  ((*(pkt + 3)) & 0x0F);
+    //continuity_counter =  ((*(pkt + 3)) & 0x0F);
 
     //ºÏ≤È adaptation_field_control, ≤¢º∆À„adaptation_field_length
     adaptation_field_length = 0; 
@@ -98,7 +98,7 @@ int parser_pcr(uint8_t *pkt, uint64_t *pcr/* out */)
             *pcr = (*pcr << 8) + pkt[8]; 
             *pcr = (*pcr << 8) + pkt[9]; 
             *pcr = (*pcr << 1); 
-            //printf("--PID: %d, m_pcr: %lld\n", PID, m_pcr);
+            //printf("--PID: %d, m_pcr: %"PRId64"\n", PID, m_pcr);
             return 0;
         }
         return -1; 
@@ -123,7 +123,7 @@ int parser_pcr(uint8_t *pkt, uint64_t *pcr/* out */)
                 *pcr = (*pcr << 8) + pkt[8]; 
                 *pcr = (*pcr << 8) + pkt[9]; 
                 *pcr = (*pcr << 1); 
-                //printf("**PID: %d, m_pcr: %lld\n", PID, m_pcr);
+                //printf("**PID: %d, m_pcr: %"PRId64"\n", PID, m_pcr);
                 return 0;
             }
         }

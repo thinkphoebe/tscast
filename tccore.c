@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <unistd.h> //for usleep
+#include <inttypes.h> //for PRId64
 
 #include "utils.h"
 #include "rtp.h"
@@ -72,13 +73,13 @@ static int update_rate(tccore_t *h, uint64_t new_pcr, uint64_t pcr)
 
     if (new_pcr <= pcr)
     {
-        print_log("PCR", LOG_WARN, "pcr too small, last:%"LLD", curr:%"LLD", diff:%"LLD"\n",
+        print_log("PCR", LOG_WARN, "pcr too small, last:%"PRId64", curr:%"PRId64", diff:%"PRId64"\n",
                 pcr, new_pcr, new_pcr - pcr);
         return -1;
     }
     if (new_pcr > pcr + 2700000)
     {
-        print_log("PCR", LOG_WARN, "pcr too big, last:%"LLD", curr:%"LLD", diff:%"LLD"\n",
+        print_log("PCR", LOG_WARN, "pcr too big, last:%"PRId64", curr:%"PRId64", diff:%"PRId64"\n",
                 pcr, new_pcr, new_pcr - pcr);
         return -1;
     }
@@ -95,7 +96,7 @@ static int update_rate(tccore_t *h, uint64_t new_pcr, uint64_t pcr)
     static int pcount = 0;
     if (diff > 500 || diff < -500)
     {
-        print_log("PCR", 1, "expect:%"LLD", curr:%"LLD", pcount:%3d, timediff:%5"LLD", pcrdiff:%7"LLD"\n",
+        print_log("PCR", 1, "expect:%"PRId64", curr:%"PRId64", pcount:%3d, timediff:%5"PRId64", pcrdiff:%7"PRId64"\n",
                 expect, curr, pcount, diff / 90, diff);
         pcount = 0;
     }
@@ -111,7 +112,7 @@ static int update_rate(tccore_t *h, uint64_t new_pcr, uint64_t pcr)
 
     if ((int)(new_pcr - pcr + diff) <= 0)
     {
-        printf("QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ %lld, %lld, %lld, %lld, %d\n",
+        printf("QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ %"PRId64", %"PRId64", %"PRId64", %"PRId64", %d\n",
                 new_pcr, pcr, diff, new_pcr - pcr, h->process_pos - h->pcr_pos);
         h->byterate = 12500000;
         //return -1;
@@ -119,14 +120,14 @@ static int update_rate(tccore_t *h, uint64_t new_pcr, uint64_t pcr)
     else
         h->byterate = (int)((uint64_t)(h->process_pos - h->pcr_pos) * 90000 / (new_pcr - pcr + diff));
 
-    //print_log("PCR", h->task.log_level_pcr, "update rate, lastpcr:%lld, newpcr:%lld, lastrate:%d, newrate:%d\n",
+    //print_log("PCR", h->task.log_level_pcr, "update rate, lastpcr:%"PRId64", newpcr:%"PRId64", lastrate:%d, newrate:%d\n",
     //        pcr, new_pcr, lastrate / 128, h->byterate / 128);
 
     if (lastrate == 0)
     {
         if (h->byterate == 0)
         {
-            printf("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW %d,%d,%d,%lld,%lld,%lld,%lld\n",
+            printf("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW %d,%d,%d,%"PRId64",%"PRId64",%"PRId64",%"PRId64"\n",
                     h->process_pos, h->pcr_pos, h->process_pos - h->pcr_pos, new_pcr, pcr, diff, new_pcr - pcr + diff);
             return -1;
         }
@@ -138,7 +139,7 @@ static int update_rate(tccore_t *h, uint64_t new_pcr, uint64_t pcr)
     if (h->task.end_time > 0 && (h->time_expect - h->time_begin) / 90000 > h->task.end_time - h->task.start_time
             && h->eof == 0)
     {
-        print_log("SEEK", LOG_INFO, "reach end time:%d, file pos:%lld\n",
+        print_log("SEEK", LOG_INFO, "reach end time:%d, file pos:%"PRId64"\n",
                 (h->time_expect - h->time_begin) / 90000, ftello(h->fp));
         h->eof = 1;
     }
@@ -200,12 +201,12 @@ static void process_read(tccore_t *h)
             print_log("FILE", h->task.log_file_pos, "loop count: %d, read pos: %.2fK, percent: %d%%\n",
                     h->loop_count, (double)fpos / 1024, fpos * 100 / h->file_size);
         else
-            print_log("FILE", h->task.log_file_pos, "loop count: %d, read pos: %.2fM, percent: %lld%%\n",
+            print_log("FILE", h->task.log_file_pos, "loop count: %d, read pos: %.2fM, percent: %"PRId64"%%\n",
                     h->loop_count, (double)fpos / 1024 / 1024, fpos * 100 / h->file_size);
 
         if (h->task.end_pos > 0 && fpos > h->task.end_pos)
         {
-            print_log("SEEK", LOG_INFO, "reach end pos:%"LLD", file pos:%lld\n",
+            print_log("SEEK", LOG_INFO, "reach end pos:%"PRId64", file pos:%"PRId64"\n",
                     (h->time_expect - h->time_begin) / 90000, fpos);
             h->eof = 1;
         }
@@ -245,8 +246,8 @@ static void process_rate(tccore_t *h)
                 {
                     if (pcr < h->pcr && pcr > h->rpcr)
                     {
-                        print_log("PCR", LOG_WARN, "AAAAAAAAAAAAAAAA pcr reverse, pcr:%"LLD", last pcr:%"LLD", "
-                                "last rpcr:%"LLD", new pcr:%"LLD"\n", h->pcr, h->last_pcr, h->rpcr, pcr);
+                        print_log("PCR", LOG_WARN, "AAAAAAAAAAAAAAAA pcr reverse, pcr:%"PRId64", last pcr:%"PRId64", "
+                                "last rpcr:%"PRId64", new pcr:%"PRId64"\n", h->pcr, h->last_pcr, h->rpcr, pcr);
                         h->pcr = h->rpcr;
                         h->pcr_pos = h->rpcr_pos;
                         if (update_rate(h, pcr, h->pcr) == 0)
@@ -260,8 +261,8 @@ static void process_rate(tccore_t *h)
                    else if (pcr > h->pcr + 900000 && h->rpcr > h->pcr + 900000
                            && pcr > h->rpcr && pcr < h->rpcr + 900000)
                    {
-                        print_log("PCR", LOG_WARN, "AAAAAAAAAAAAAAAA pcr step, pcr:%"LLD", last pcr:%"LLD", "
-                                "last rpcr:%"LLD", new pcr:%"LLD"\n", h->pcr, h->last_pcr, h->rpcr, pcr);
+                        print_log("PCR", LOG_WARN, "AAAAAAAAAAAAAAAA pcr step, pcr:%"PRId64", last pcr:%"PRId64", "
+                                "last rpcr:%"PRId64", new pcr:%"PRId64"\n", h->pcr, h->last_pcr, h->rpcr, pcr);
                         h->pcr = h->rpcr;
                         h->pcr_pos = h->rpcr_pos;
                         if (update_rate(h, pcr, h->pcr) == 0)
@@ -348,6 +349,8 @@ static void process_send(tccore_t *h)
 
         for (i = 0; i < MAX_DEST_NUM; i++)
         {
+            sendsize = 0;
+
             if (h->task.rtp_header[i] && h->rtp[i] != NULL)
             {
                 uint64_t pts = h->pcr - (h->pcr_pos - h->send_pos) * 90000 / h->byterate;
@@ -457,7 +460,7 @@ static int seek2time(tccore_t *h, uint32_t totime)
                     if (time / 90000 > totime)
                     {
                         fseeko(h->fp, ftello(h->fp) - h->process_pos, SEEK_SET);
-                        print_log("SEEK", LOG_INFO, "seek to time: %d, file pos: %lld\n", time / 90000, ftello(h->fp));
+                        print_log("SEEK", LOG_INFO, "seek to time: %d, file pos: %"PRId64"\n", time / 90000, ftello(h->fp));
                         return 0;
                     }
                     last_pcr = pcr;
@@ -664,7 +667,7 @@ tccore_t* tccore_create(tctask_t *task)
     if (h->task.bitrate > 0)
         print_log("TCCORE", LOG_INFO, "force bitrate:%d\n", h->task.bitrate);
     print_log("TCCORE", LOG_INFO, "loopfile:%d\n", h->task.loopfile);
-    print_log("TCCORE", LOG_INFO, "startpos:%lld, endpos:%lld, starttime:%lld, endtime:%lld\n",
+    print_log("TCCORE", LOG_INFO, "startpos:%"PRId64", endpos:%"PRId64", starttime:%"PRId64", endtime:%"PRId64"\n",
             h->task.start_pos, h->task.end_pos, h->task.start_time, h->task.end_time);
 
     reset(h, 0, 1);
@@ -727,7 +730,7 @@ void tccore_start(tccore_t *h)
 
         if (h->eof == 2)
         {
-            if (h->task.loopfile == -1 || h->task.loopfile > 0 && h->loop_count < h->task.loopfile)
+            if (h->task.loopfile == -1 || (h->task.loopfile > 0 && h->loop_count < h->task.loopfile))
             {
                 uint64_t timediff;  
                 uint64_t cur = get_tick();
@@ -735,7 +738,7 @@ void tccore_start(tccore_t *h)
                 h->time_expect += (h->process_pos - h->pcr_pos) * 90000 / h->byterate;
                 //add time difference to next loop
                 timediff = h->time_expect - cur * 90;
-                print_log("TCCORE", LOG_INFO, "End reset! time expect:%d, current:%d, pcr diff:%lld\n",
+                print_log("TCCORE", LOG_INFO, "End reset! time expect:%d, current:%d, pcr diff:%"PRId64"\n",
                         h->time_expect / 90, cur, timediff);
                 reset(h, timediff, 0);
 

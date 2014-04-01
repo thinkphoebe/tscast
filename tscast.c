@@ -6,6 +6,7 @@
 #include <string.h> //strncpy, memset
 #include <stdio.h> //FILE
 #include <stdint.h> //for uint32_t...
+#include <unistd.h> //for usleep
 #include <getopt.h>
 #include <pthread.h> //-lpthread
 
@@ -333,6 +334,7 @@ static int tscast_init()
     if (WSAStartup(MAKEWORD(2, 1), &wsaData) != 0) 
         return -1;
 #endif
+    return 0;
 }
 
 
@@ -408,7 +410,6 @@ static void process_cmd()
 
 int main(int argc, char **argv)
 {
-    tccore_t *h_tccore;
     int ret;
 
     if (tscast_init() != 0)
@@ -423,7 +424,6 @@ int main(int argc, char **argv)
     process_cmd();
 
     tscast_exit();
-
     return 0;
 }
 
