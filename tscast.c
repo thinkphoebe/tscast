@@ -340,8 +340,6 @@ static int tscast_init()
 
 static void tscast_exit()
 {
-    //TODO stop and release channels
-
 #ifdef WIN32
     WSACleanup();
 #endif
