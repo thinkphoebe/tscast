@@ -7,7 +7,7 @@ extern "C" {
 
 
 #define SEND_BUF_SIZE (188 * 1000 * 10)
-#define MAX_DEST_NUM 4
+#define MAX_DEST_NUM 16
 
 typedef struct _tccore tccore_t;
 

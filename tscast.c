@@ -103,7 +103,6 @@ static int parser_opt(int argc, char *const*argv)
     memset(&task, 0, sizeof(tctask_t));
     task.log_file_pos = 1;
     task.log_level_pcr = 1;
-    task.min_pkt_size = 1316;
     task.max_pkt_size = 1400;
     task.packet_size = 188;
 
@@ -315,6 +314,10 @@ static int parser_opt(int argc, char *const*argv)
                 abort();
         }
     }
+
+    task.min_pkt_size = task.packet_size * 7;
+    if (task.max_pkt_size < task.min_pkt_size)
+        task.max_pkt_size = task.min_pkt_size;
 
     if (task.filename[0] != 0)
     {
