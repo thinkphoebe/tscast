@@ -27,6 +27,7 @@ static const struct option long_options[] =
     { "loopfile", 1, NULL, 'l' },
     { "ttl", 1, NULL, 0 },
     { "bitrate", 1, NULL, 0 },
+    { "pktsize", 1, NULL, 0},
 
     { "rtpheader", 1, NULL, 0 },
     { "rtpssrc", 1, NULL, 0 },
@@ -61,6 +62,7 @@ static void print_help(const char *name, FILE *stream)
             "\t-l --loopfile:\t-1-->always loop, 0-->no loop, 1-->loop times.\n"
             "\t--ttl:\t\tTime to live value.\n"
             "\t--bitrate:\tForce bitrate. if not set, use auto bitrate.\n\n"
+            "\t--pktsize:\tIf ts packet size is not 188, you should specify it.\n\n"
 
             "\t--rtpheader:\tWhether to add rtp header, 0-->not add, 1-->add.\n"
                 "\t\t\tCan be set for each destination respectively, such as \"--rtpheader 1, 0\"\n"
@@ -103,6 +105,7 @@ static int parser_opt(int argc, char *const*argv)
     task.log_level_pcr = 1;
     task.min_pkt_size = 1316;
     task.max_pkt_size = 1400;
+    task.packet_size = 188;
 
     optind = 0; //ATTENTION: reset getopt_long
     while ((ret = getopt_long(argc, argv, short_options, long_options, &long_index)) != -1)
@@ -120,6 +123,11 @@ static int parser_opt(int argc, char *const*argv)
                 {
                     task.bitrate = atoi(optarg);
                     print_log("OPT", LOG_INFO, "bitrate: %dK\n", task.bitrate / 1024);
+                }
+                else if (strncmp(long_options[long_index].name, "pktsize", strlen("pktsize")) == 0)
+                {
+                    task.packet_size = atoi(optarg);
+                    print_log("OPT", LOG_INFO, "pktsize: %d\n", task.packet_size);
                 }
                 else if (strncmp(long_options[long_index].name, "rtpheader", strlen("rtpheader")) == 0)
                 {

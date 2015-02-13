@@ -11,6 +11,8 @@
 #include <stdio.h>
 #include <stdarg.h> //for va_list, va_start, va_end
 
+#include "utils.h"
+
 #ifdef WIN32
 uint32_t get_tick()
 {
@@ -61,7 +63,8 @@ void print_log(const char *name, int control, const char *format, ...)
 }
 
 
-int parser_pcr(uint8_t *pkt, uint64_t *pcr/* out */)
+//ATTENTION: 使用用第一个解析到的pcr_pid, 解析到后保存到传入参数pcr_pid中下次使用
+int parser_pcr(int *pcr_pid, uint8_t *pkt, uint64_t *pcr/* out */)
 {
     //uint8_t transport_error_indicator; 
     //uint8_t playload_unit_start_indicator; 
@@ -74,7 +77,7 @@ int parser_pcr(uint8_t *pkt, uint64_t *pcr/* out */)
 
     if (*pkt != 0x47)
     {
-        printf("tspacket error!\n");
+        print_log("pcr", LOG_ERROR, "tspacket error!\n");
         return -1; 
     }
 
@@ -99,7 +102,7 @@ int parser_pcr(uint8_t *pkt, uint64_t *pcr/* out */)
             *pcr = (*pcr << 8) + pkt[9]; 
             *pcr = (*pcr << 1); 
             //printf("--PID: %d, m_pcr: %"PRId64"\n", PID, m_pcr);
-            return 0;
+            goto GOT_PCR;
         }
         return -1; 
     }
@@ -124,11 +127,23 @@ int parser_pcr(uint8_t *pkt, uint64_t *pcr/* out */)
                 *pcr = (*pcr << 8) + pkt[9]; 
                 *pcr = (*pcr << 1); 
                 //printf("**PID: %d, m_pcr: %"PRId64"\n", PID, m_pcr);
-                return 0;
+                goto GOT_PCR;
             }
         }
     }
 
     return -1;
+
+GOT_PCR:
+    if (*pcr_pid == 0)
+    {
+        *pcr_pid = PID;
+        print_log("pcr", LOG_INFO, "use 0x%x for pcr pid!\n", PID);
+    }
+    else if (PID != *pcr_pid)
+    {
+        return -1;
+    }
+    return 0;
 }
 

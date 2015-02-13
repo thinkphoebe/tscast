@@ -44,6 +44,7 @@ typedef struct _tctask
     int min_pkt_size;
     int max_pkt_size; //不应超过mtu, 尤其是rtp时
 
+    int packet_size;
 } tctask_t;
 
 tccore_t* tccore_create(tctask_t *task);

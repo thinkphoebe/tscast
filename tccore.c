@@ -54,6 +54,8 @@ struct _tccore
     int sockfd[MAX_DEST_NUM];
     rtp_t *rtp[MAX_DEST_NUM];
     FILE *fp;
+
+    int pcr_pid;
 };
 
 
@@ -175,7 +177,7 @@ static void process_read(tccore_t *h)
         h->send_pos = 0;
     }
 
-    if (h->data_size - h->process_pos <= 188)
+    if (h->data_size - h->process_pos <= h->task.packet_size)
     {
         int readsize;
         int64_t fpos;
@@ -218,19 +220,19 @@ static void process_rate(tccore_t *h)
 {
     while ((h->eof != 2 && h->pcr_pos - h->send_pos < h->task.max_pkt_size) || h->byterate == 0)
     {
-        if (h->process_pos + 188 > h->data_size && h->eof != 1)
+        if (h->process_pos + h->task.packet_size > h->data_size && h->eof != 1)
             process_read(h);
 
-        while (h->process_pos < h->data_size - 188)
+        while (h->process_pos < h->data_size - h->task.packet_size)
         {
-            if (h->send_buf[h->process_pos] == 0x47 && h->send_buf[h->process_pos + 188] == 0x47)
+            if (h->send_buf[h->process_pos] == 0x47 && h->send_buf[h->process_pos + h->task.packet_size] == 0x47)
                 break;
             h->process_pos++;
         }
-        if (h->process_pos <= h->data_size - 188)
+        if (h->process_pos <= h->data_size - h->task.packet_size)
         {
             uint64_t pcr;
-            if (parser_pcr(&h->send_buf[h->process_pos], &pcr) == 0)
+            if (parser_pcr(&h->pcr_pid, &h->send_buf[h->process_pos], &pcr) == 0)
             {
                 if (h->task.speed_scale > 0 && h->task.speed_scale < 1000000)
                     pcr = pcr * 100 / h->task.speed_scale;
@@ -277,7 +279,7 @@ static void process_rate(tccore_t *h)
                 h->rpcr = pcr;
                 h->rpcr_pos = h->process_pos;
             }
-            h->process_pos += 188;
+            h->process_pos += h->task.packet_size;
         }
         else if (h->eof >= 1)
         {
@@ -300,9 +302,9 @@ static void process_send(tccore_t *h)
         return;
 
     //ATTENTION this may cause some data not send!!!!!!!!!!!
-    while (h->send_pos < h->pcr_pos - 188)
+    while (h->send_pos < h->pcr_pos - h->task.packet_size)
     {
-        if (h->send_buf[h->send_pos] == 0x47 && h->send_buf[h->send_pos + 188] == 0x47)
+        if (h->send_buf[h->send_pos] == 0x47 && h->send_buf[h->send_pos + h->task.packet_size] == 0x47)
             break;
         h->send_pos++;
     }
@@ -335,7 +337,7 @@ static void process_send(tccore_t *h)
             }
             if (end_pos >= h->pcr_pos)
             {
-                if (end_pos >= h->pcr_pos && h->process_pos + 188 < h->data_size)
+                if (end_pos >= h->pcr_pos && h->process_pos + h->task.packet_size < h->data_size)
                     break;
                 if (end_pos > h->data_size)
                 {
@@ -347,10 +349,9 @@ static void process_send(tccore_t *h)
         else if (end_pos >= h->pcr_pos)
             break;
 
+        sendsize = 0;
         for (i = 0; i < MAX_DEST_NUM; i++)
         {
-            sendsize = 0;
-
             if (h->task.rtp_header[i] && h->rtp[i] != NULL)
             {
                 uint64_t pts = h->pcr - (h->pcr_pos - h->send_pos) * 90000 / h->byterate;
@@ -438,17 +439,17 @@ static int seek2time(tccore_t *h, uint32_t totime)
             break;
         h->data_size += read_size;
 
-        while (h->data_size >= h->process_pos + 376)
+        while (h->data_size >= h->process_pos + h->task.packet_size * 2)
         {
-            while (h->data_size >= h->process_pos + 376 && (h->send_buf[h->process_pos] != 0x47
-                    || h->send_buf[h->process_pos + 188] != 0x47))
+            while (h->data_size >= h->process_pos + h->task.packet_size * 2 && (h->send_buf[h->process_pos] != 0x47
+                    || h->send_buf[h->process_pos + h->task.packet_size] != 0x47))
                 h->process_pos++;
 
-            if (h->data_size >= h->process_pos + 376 && h->send_buf[h->process_pos] == 0x47
-                    && h->send_buf[h->process_pos + 188] == 0x47)
+            if (h->data_size >= h->process_pos + h->task.packet_size * 2 && h->send_buf[h->process_pos] == 0x47
+                    && h->send_buf[h->process_pos + h->task.packet_size] == 0x47)
             {
                 uint64_t pcr;
-                if (parser_pcr(&h->send_buf[h->process_pos], &pcr) == 0)
+                if (parser_pcr(&h->pcr_pid, &h->send_buf[h->process_pos], &pcr) == 0)
                 {
                     if (h->task.speed_scale > 0 && h->task.speed_scale < 1000000)
                         pcr = pcr * 100 / h->task.speed_scale;
@@ -466,7 +467,7 @@ static int seek2time(tccore_t *h, uint32_t totime)
                     last_pcr = pcr;
                 }
             }
-            h->process_pos += 188;
+            h->process_pos += h->task.packet_size;
         }
 
         if (h->data_size > h->process_pos)

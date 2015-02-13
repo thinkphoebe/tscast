@@ -22,7 +22,7 @@ typedef enum
 
 uint32_t get_tick();
 void print_log(const char *name, int control, const char *format, ...);
-int parser_pcr(uint8_t *pkt, uint64_t *pcr/* out */);
+int parser_pcr(int *pcr_pid, uint8_t *pkt, uint64_t *pcr/* out */);
 
 
 #ifdef __cplusplus
