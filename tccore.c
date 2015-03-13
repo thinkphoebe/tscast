@@ -58,6 +58,8 @@ struct _tccore
     int pcr_pid;
 };
 
+static int reset(tccore_t *h, int timediff, int first_time);
+
 
 static int update_rate(tccore_t *h, uint64_t new_pcr, uint64_t pcr)
 {
@@ -185,6 +187,7 @@ static void process_read(tccore_t *h)
         if (SEND_BUF_SIZE - h->data_size <= 0)
         {
             print_log("FILE", LOG_INFO, "4444444444444444444444444444444444444444444444444444 %d, %d\n", h->data_size, h->process_pos);
+            reset(h, 0, 0);
             return;
         }
 
