@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include <unistd.h> //for usleep
 #include <inttypes.h> //for PRId64
+#include <errno.h>
 
 #include "utils.h"
 #include "rtp.h"
@@ -383,8 +384,12 @@ static void process_send(tccore_t *h)
             {
                 if (h->sockfd[i] != -1)
                 {
-                    if ((sendsize = sendto(h->sockfd[i], pdata, datasize, 0,
-                                    (struct sockaddr *)&h->peeraddr[i], sizeof(struct sockaddr_in))) < 0)
+                    if (h->task.tcp)
+                        sendsize = send(h->sockfd[i], pdata, datasize, 0);
+                    else
+                        sendsize = sendto(h->sockfd[i], pdata, datasize, 0, (struct sockaddr *)&h->peeraddr[i], 
+                                sizeof(struct sockaddr_in));
+                    if (sendsize < 0)
                     {
                         print_log("SEND", LOG_ERROR, "send packet error!\n");
                     }
@@ -568,6 +573,17 @@ static int net_setup(tccore_t *h)
         h->peeraddr[i].sin_family = AF_INET;
         h->peeraddr[i].sin_addr.s_addr = dest_ip;
         h->peeraddr[i].sin_port = dest_port;
+
+        if (h->task.tcp)
+        {
+            h->sockfd[i] = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+            if (connect(h->sockfd[i], (struct sockaddr *)&h->peeraddr[i], sizeof(struct sockaddr)) < 0)
+            {
+                print_log("NET", LOG_ERROR, "failed to connect [%s:%d]. %d\n", ipstr, dest_port, strerror(errno));
+                return -1;
+            }
+            continue;
+        }
 
         if (IS_MULTICAST_IP(ntohl(dest_ip)))
         {

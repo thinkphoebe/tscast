@@ -17,6 +17,7 @@ typedef struct _tctask
     int loopfile; //0-->不循环, -1-->无限循环, > 0 -->循环次数
     int ttl;
     int bitrate;
+    int tcp;
 
     char dest[MAX_DEST_NUM][32];
 

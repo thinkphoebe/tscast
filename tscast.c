@@ -26,6 +26,7 @@ static const struct option long_options[] =
     { "dest", 1, NULL, 'd' },
     { "loopfile", 1, NULL, 'l' },
     { "ttl", 1, NULL, 0 },
+    { "tcp", 0, NULL, 0 },
     { "bitrate", 1, NULL, 0 },
     { "pktsize", 1, NULL, 0},
 
@@ -61,6 +62,7 @@ static void print_help(const char *name, FILE *stream)
             "\t-d --dest:\tSet destinations, such as -d 225.2.2.2:6000,172.16.6.99:12000.\n"
             "\t-l --loopfile:\t-1-->always loop, 0-->no loop, 1-->loop times.\n"
             "\t--ttl:\t\tTime to live value.\n"
+            "\t--tcp:\t\tUse TCP connection.\n"
             "\t--bitrate:\tForce bitrate. if not set, use auto bitrate.\n\n"
             "\t--pktsize:\tIf ts packet size is not 188, you should specify it.\n\n"
 
@@ -117,6 +119,11 @@ static int parser_opt(int argc, char *const*argv)
                 {
                     task.ttl = atoi(optarg);
                     print_log("OPT", LOG_INFO, "ttl: %d\n", task.ttl);
+                }
+                else if (strncmp(long_options[long_index].name, "tcp", strlen("tcp")) == 0)
+                {
+                    task.tcp = 1;
+                    print_log("OPT", LOG_INFO, "tcp: %d\n", task.tcp);
                 }
                 else if (strncmp(long_options[long_index].name, "bitrate", strlen("biterate")) == 0)
                 {
